@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from collections import deque
 from geocomp import config
 from geocomp.common.polygon import Polygon
 from geocomp.common.point import Point
@@ -66,7 +67,6 @@ def triangulationByEars(lv):
     for face in f: face.printFace()
 
     return f,diagonals
-
 
 def triangulation(l):
     return triangulationByEars(l)
