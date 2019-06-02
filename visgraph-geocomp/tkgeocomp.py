@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from Tkinter import *
+from tkinter import *
 import geocomp
 from geocomp.gui import tk
 from geocomp import config
