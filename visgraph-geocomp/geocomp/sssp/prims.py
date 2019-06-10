@@ -7,6 +7,13 @@ from geocomp.common.segment import Segment
 from geocomp.common.prim import *
 import math
 
+def above(a, b): #returns TRUE if a lies above b
+    if a.y > b.y: return True
+    if a.y == b.y and a.x < b.x: return True
+    return False
+
+def below(a, b):
+    return not above(a, b)
 
 def isVertex(p,l):
     # True if p belongs to the polygon border

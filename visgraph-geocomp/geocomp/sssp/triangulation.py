@@ -13,17 +13,26 @@ from functools import cmp_to_key
 from .prims import *
 from .dcel import *
 
+def addDiagonal(u, v, f):
+    print("added diagonal ", u.getPoint(), v.getPoint())
+    h = referenceEdge(u, v)
+    print(h)
+    splitFace(u, v, h, h.getFace(), f)
+
+
 def triangulationByEars(lv):
     l = lv[:]
     n = len(l)
     diagonals = []
 
     Polygon(l).plot("deep sky blue")
-    
+    vs, ccw , f = initDCEL(lv)    
     for i in range(n):
         j = i-1
         k = (i+1)%n
 
+        lv[i].vertex = vs[i]
+        l[i].vertex = vs[i]
         l[i].ear = False
         l[i].prev = l[j]
         l[i].next = l[k]
@@ -37,8 +46,10 @@ def triangulationByEars(lv):
         v1 = v2.prev
         v3 = v2.next
 
-        diagonals.append(Segment(v1,v3))
-        aux.append(Segment(v1,v3))
+        diag = Segment(v1,v3)
+        diagonals.append(diag)
+        diag.hilight("yellow")
+        addDiagonal(v1.vertex, v3.vertex, f)
 
         l.remove(v2)
         v1.next = v3
@@ -48,20 +59,6 @@ def triangulationByEars(lv):
         v3.ear = isEarCorner(l,v3)
         
         v2 = v3 #proceeds to the next vertex
-        
-    for d in diagonals:
-        d.init.lineto(d.to,"yellow")
-
-    
-    vs, ccw , f = initDCEL(lv)
-    
-    for i in range(len(lv)): lv[i].vertex = vs[i]
-        
-    for d in diagonals:
-        u = d.init
-        v = d.to
-        h = referenceEdge(u,v)
-        splitFace(u,v,h,h.getFace(),f)
         
     print("\n")
     for face in f: face.printFace()

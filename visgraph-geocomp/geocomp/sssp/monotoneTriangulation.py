@@ -164,7 +164,7 @@ def triangulateMonotone(l, f):
 
     print("\n")
             
-def test(l):
+def triangulate(l):
     Polygon(l).plot("deep sky blue")
     vertices, ccw, faces = initDCEL(l)
     for v in vertices:

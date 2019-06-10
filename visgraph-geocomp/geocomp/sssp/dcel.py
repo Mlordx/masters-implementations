@@ -123,7 +123,7 @@ class Face:
 
             aux = aux.getNext()
         
-def splitFace(u,v,h,f,faces):
+def splitFace(u, v, h,f,faces):
     # u,v vertices
     # h edge with u as its target
     # f face incident to h
@@ -139,10 +139,10 @@ def splitFace(u,v,h,f,faces):
     h1.setTwin(h2)
     h2.setTwin(h1)
 
-    h1.setTarget(v)
-    h2.setTarget(u)
-    u.vertex.setEdge(h1)
-    v.vertex.setEdge(h2)
+    h1.setTarget(v.getPoint())
+    h2.setTarget(u.getPoint())
+    u.setEdge(h1)
+    v.setEdge(h2)
 
     h2.setNext(h.getNext()) # h's successor is now h2's successor
 
@@ -153,12 +153,12 @@ def splitFace(u,v,h,f,faces):
 
     aux = h2
 
-    while aux.getTarget() != v:
+    while aux.getTarget() != v.getPoint():
         aux.setFace(f2)
         aux = aux.getNext()
 
     aux.setFace(f2)
-    
+
     h1.setNext(aux.getNext())
     (h1.getNext()).setPrev(h1)
     
@@ -167,7 +167,7 @@ def splitFace(u,v,h,f,faces):
 
     aux = h1
 
-    while aux.getTarget() != u:
+    while aux.getTarget() != u.getPoint():
         aux.setFace(f1)
         aux = aux.getNext()
     aux.setFace(f1)
@@ -195,6 +195,7 @@ def initDCEL(points):
         e2.setTwin(e)
 
         u2 = Vertex(u,e)
+        
 
         edgesCCW.append(e)
         edgesCW.append(e2)
@@ -234,11 +235,11 @@ def referenceEdge(u,v):
     the same face.
 
     """
-    v1 = u.vertex
-    v2 = v.vertex
+    v1 = u#.vertex
+    v2 = v#.vertex
 
-    e1 = u.vertex.getEdge().getPrev()
-    e2 = v.vertex.getEdge().getPrev()
+    e1 = u.getEdge().getPrev()#u.vertex.getEdge().getPrev()
+    e2 = v.getEdge().getPrev()#v.vertex.getEdge().getPrev()
 
     aux = None #aux is an half-edge incident to u    
     while aux != e1:

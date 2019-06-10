@@ -10,13 +10,15 @@ Algoritmos disponíveis:
 from . import triangulation
 from . import singleSourceShortestPath
 from . import monotoneTriangulation
+from . import monotoneDecomposition
 
 # cada entrada deve ter:
 #  [ 'nome-do-modulo', 'nome-da-funcao', 'nome do algoritmo' ]
 children = ( 
 	( 'triangulation', 'triangulationByEars', 'Triangulação por orelhas' ),
     ('singleSourceShortestPath', 'singleSourceShortestPath', 'Árvore de caminhos mínimos'),
-	('monotoneTriangulation', 'test', 'testeeeee'),
+	('monotoneTriangulation', 'triangulate', 'triangulação de Monotonos'),
+    ('monotoneDecomposition', 'decompose', 'decomposicao em monotonos'),
     
 )
 
