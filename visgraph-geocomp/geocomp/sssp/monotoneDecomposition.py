@@ -11,7 +11,7 @@ from geocomp.common.guiprim import *
 from functools import cmp_to_key
 from .prims import *
 from .dcel import *
-from geocomp.robotmv.tree import *
+from .tree import *
 
 def vertexType(p):
     v = p.getPoint()
@@ -39,68 +39,78 @@ def paintVertex(v, t):
     else: v.getPoint().hilight("pink") #MERGE
     control.sleep()
 
-def addDiagonal(u, v, f):
-    print("added diagonal ", u.getPoint(), v.getPoint())
-    h = referenceEdge(u, v)
-    u.getPoint().lineto(v.getPoint())
-    splitFace(u, v, h, h.getFace(), f)
-
 def handleStartVertex(v, t, f):
-    edge = Segment(v.getPoint(),v.getEdge().getTarget())
-    edge.helper = v
-    t.insert(edge)
+    v.getEdge().setHelper(v)
+
+    print("Inserted ", v.getEdge().getSegment(), " on the tree, with helper ", v.getEdge().getHelper().getPoint())
+    print()
+    t.insert(v.getEdge())
+    
 
 def handleEndVertex(v, t, f):
     e = v.getEdge()
-    u = e.helper
+    u = e.getHelper()
     if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
-    segment = Segment(v.getPoint(),e.getTarget())
-    t.delete(segment)
+
+    print("Removed ", e.getSegment(), " from the tree")
+    print()
+    t.delete(e)
 
 def handleSplitVertex(v, t, f):
     e_j = t.getAnt(v.getPoint()) #edge to the left of v in T
-    u = e_j.helper
+    u = e_j.getHelper()
     addDiagonal(u, v, f)
-    e_j.helper = v
+    e_j.setHelper(v)
     
     e = v.getEdge()
-    segment = Segment(v.getPoint(),e.getTarget())
-    segment.helper = v
-    t.insert(segment)
+    e.setHelper(v)
+
+    print("Inserted ", e.getSegment(), " on the tree, with helper ", e.getHelper().getPoint())
+    print()
+    t.insert(e)
 
 def handleMergeVertex(v, t, f):
     e = v.getEdge().getPrev()
-    u = e.helper
+    u = e.getHelper()
     if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
-    segment = Segment(e.getPrev().getTarget(),v.getPoint())
-    t.delete(segment)
+    print("Removed ", e.getSegment(), " from tree")
+    print()
+    t.delete(e)
 
     e_j = t.getAnt(v.getPoint())
-    print("previous on tree: ", e_j)
-    u = e_j.helper
+    u = e_j.getHelper()
     if vertexType(u) == "MERGE": addDiagonal(u, v, f)
-    e_j.helper = v
+    e_j.setHelper(v)
+    print(e_j.getSegment(), " new helper = ", e_j.getHelper().getPoint())
+    print()
 
 def handleRegularVertex(v, t, f):
     nextV = v.getEdge().getTarget()
-    #prevV = v.getEdge().getTwin().getNext().getTarget()
 
-    if nextV.y > v.getPoint().y or (nextV.y == v.getPoint().y and nextV.x < v.getPoint().x): #the interior of P is to the right of v
+    if below(nextV, v.getPoint()): #the interior of P is to the right of v
         e = v.getEdge().getPrev()
-        u = e.helper
+        u = e.getHelper()
         if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
-        segment = Segment(e.getPrev().getTarget(),v.getPoint())
-        t.delete(segment)
-        segment = Segment(v.getPoint(), v.getEdge().getTarget())
-        segment.helper = v
-        t.insert(segment)
+        print("Removed ", e.getSegment(), " from tree")
+        t.delete(e)
+
+        e = v.getEdge()
+        e.setHelper(v)
+        print("Inserted ", e.getSegment(), " on the tree, with helper ", e.getHelper().getPoint())
+        t.insert(e)
     else:
         e_j = t.getAnt(v.getPoint())
-        u = e_j.helper
+        u = e_j.getHelper()
+        #print("previous on tree: ", e_j, " with helper ", e_j.getHelper().getPoint())
         if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
-        e_j.helper = v
+        e_j.setHelper(v)
+        print(e_j.getSegment(), " new helper = ", e_j.getHelper().getPoint())
+
+    print()
+
 
 def handleVertex(v, t, f):
+    print("vertex = ", v.getPoint())
     tp = vertexType(v)
     paintVertex(v, tp)
     if tp == "REGULAR": handleRegularVertex(v, t, f)
@@ -108,6 +118,8 @@ def handleVertex(v, t, f):
     elif tp == "SPLIT": handleSplitVertex(v, t, f)
     elif tp == "MERGE": handleMergeVertex(v, t, f)
     elif tp == "END": handleEndVertex(v, t, f)
+    print("tree = ", t)
+    print("-------------\n")
 
 def decompose(l):
     Polygon(l).plot("cyan")
@@ -115,10 +127,7 @@ def decompose(l):
     verts = sorted(vertices, key = lambda p: (p.getPoint().y, -p.getPoint().x), reverse = True)
     tree = Tree()
 
-    for p in verts:
-        p.getEdge().helper = None
-        p.getEdge().getTwin().helper = None
-    
     for p in verts: handleVertex(p, tree, faces)
 
     for f in faces: f.printFace()
+    return faces

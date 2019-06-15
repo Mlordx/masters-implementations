@@ -12,6 +12,7 @@ from geocomp.common.guiprim import *
 from functools import cmp_to_key
 from .prims import *
 from .dcel import *
+from .monotoneDecomposition import *
 
 
 def mergeChains(l):
@@ -21,6 +22,10 @@ def mergeChains(l):
     indMin = 0
     indMax = n-1
 
+    for v in l:
+        v.x = v.getPoint().x
+        v.y = v.getPoint().y
+        
     for i in range(n):
         if l[i].y == yMax and l[i].x < l[indMax].x: indMax = i
         if l[i].y == yMin and l[i].x > l[indMin].x: indMin = i
@@ -76,26 +81,35 @@ def mergeChains(l):
     return (list(sortedPoints),set1,set2)
 
 def adjacent(p1, p2):
-    #print("p1 = ", p1.getPoint(), " p1 edge = ", str(p1.getEdge()))
-    #print("p2 = ", p2.getPoint(), " p2 edge = ", str(p2.getEdge()))
-    if p1.getEdge().getTarget() == p2.getPoint() or p2.getEdge().getTarget() == p1.getPoint():
-        #print(p1.getPoint(), " is adjacent to ", p2.getPoint())
-        return True
-    else:
-        #print(p1.getPoint(), " is NOT adjacent to ", p2.getPoint())
-        return False
+    e = p1.getEdge()
+    aux = None
+    while aux != e:
+        if not aux: aux = e
+        if aux.getTarget() == p2.getPoint(): return True
+        aux = aux.getTwin().getNext()
+
+    e = p2.getEdge()
+    aux = None
+    while aux != e:
+        if not aux: aux = e
+        if aux.getTarget() == p1.getPoint(): return True
+        aux = aux.getTwin().getNext()
+
+    return False
+
+    
     
 def triangulateMonotone(l, f):
     stack = []
     points, chain1, chain2 = mergeChains(l)
-
     stack.append(points[0])
     stack.append(points[1])
     diagonals = []
     
     for j in range(2,len(points)-1):
-        #print("-------------------------")
-       # print("j = ", j, " points[j] = ", points[j].getPoint())
+        print("STACK")
+        for s in stack: print(s.getPoint())
+        print()
         points[j].getPoint().hilight("red")
         aux = []
         for i in range(len(stack)-1): aux.append(Segment(stack[i].getPoint(),stack[i+1].getPoint()))
@@ -110,16 +124,17 @@ def triangulateMonotone(l, f):
             top = stack[-1]
             t = len(stack)-1
             sees = False
-            if points[j].getEdge().getTarget() == top.getPoint(): sees = left_on(stack[t], stack[t-1], points[j])
-            else: sees = right_on(stack[t], stack[t-1], points[j])
+            if points[j].getEdge().getTarget() == top.getPoint(): sees = left(stack[t], stack[t-1], points[j])
+            else: sees = right(stack[t], stack[t-1], points[j])
             print("points[j] = ", points[j].getPoint(), " top = ", top.getPoint(), " sees = ", sees)
             while t >= 1 and sees:
                 stack.pop()
                 t -=1
+                addDiagonal(points[j], stack[t], f)
                 print("added diagonal ", Segment(points[j].getPoint(),stack[t].getPoint())) 
                 diagonals.append(Segment(points[j].getPoint(),stack[t].getPoint()))
-                if points[j].getEdge().getTarget() == top.getPoint(): sees = left_on(stack[t], stack[t-1], points[j])
-                else: sees = right_on(stack[t], stack[t-1], points[j])
+                if points[j].getEdge().getTarget() == top.getPoint(): sees = left(stack[t], stack[t-1], points[j])
+                else: sees = right(stack[t], stack[t-1], points[j])
 
             stack.append(points[j])
         else:
@@ -127,7 +142,8 @@ def triangulateMonotone(l, f):
             top = stack[-1]
             t = len(stack)-1
             while t>=1:
-                print("added diagonal ", Segment(points[j].getPoint(),stack[t].getPoint())) 
+                print("added diagonal ", Segment(points[j].getPoint(),stack[t].getPoint()))
+                addDiagonal(points[j], stack[t], f)
                 diagonals.append(Segment(points[j].getPoint(),stack[t].getPoint()))
                 stack.pop()
                 t -=1
@@ -150,24 +166,29 @@ def triangulateMonotone(l, f):
 
     while t>=2:
         t -=1
+        addDiagonal(points[-1], stack[t], f) 
+        print("added diagonal ", Segment(points[-1].getPoint(),stack[t].getPoint()))
         diagonals.append(Segment(points[-1].getPoint(),stack[t].getPoint()))
         stack.pop()
         
     for d in diagonals:
         print(d)
         d.init.lineto(d.to,"yellow")
-    #for d in diagonals:
-    #    u = d.init
-    #    v = d.to
-    #    h = referenceEdge(u,v)
-    #    splitFace(u,v,h,h.getFace(),f)
-
     print("\n")
+
+    return f
             
 def triangulate(l):
     Polygon(l).plot("deep sky blue")
-    vertices, ccw, faces = initDCEL(l)
-    for v in vertices:
-        v.x = v.getPoint().x
-        v.y = v.getPoint().y
-    triangulateMonotone(vertices, faces)
+
+    faces = decompose(l)
+    ans = []
+    
+    for f in faces:
+        vertices = f.listFace()
+        vs, ccw, face = initDCEL(vertices)
+        print("FACE: ")
+        for bla in face: bla.printFace()
+        ans += triangulateMonotone(vs, face)
+
+    for f in ans: f.printFace()

@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from geocomp.common.prim import *
+from .prims import *
 from geocomp.common.point import Point
+from geocomp.common.segment import Segment
 
 class Edge:
     def __init__(self):
@@ -12,6 +14,7 @@ class Edge:
         self.prev = None
         self.face = None
         self.boundary = False
+        self.helper = None
         
     def setFace(self,f):
         self.face = f
@@ -57,6 +60,25 @@ class Edge:
 
     def getOppVertex(self):
         return self.getNext().getTarget()
+
+    def getHelper(self):
+        return self.helper
+
+    def setHelper(self, h):
+        self.helper = h
+
+    def getOrientedSegment(self):
+        a = self.getOrigin()
+        b = self.getTarget()
+        return Segment(a, b)
+        
+    def getSegment(self):
+        a = self.getTarget()
+        b = self.getOrigin()
+
+        if below(a, b): a,b = b,a
+
+        return Segment(a, b)
     
     def __str__(self):
         return str(self.getOrigin()) + " " + str(self.getTarget())
@@ -86,7 +108,7 @@ class Face:
         return self.edge
 
     def listFace(self):
-        #list of vertices in the face, in clockwise order
+        #list of vertices in the face, in counter-clockwise order
         listV = []
         
         listV.append(self.edge.getTarget())
@@ -235,11 +257,11 @@ def referenceEdge(u,v):
     the same face.
 
     """
-    v1 = u#.vertex
-    v2 = v#.vertex
+    v1 = u
+    v2 = v
 
-    e1 = u.getEdge().getPrev()#u.vertex.getEdge().getPrev()
-    e2 = v.getEdge().getPrev()#v.vertex.getEdge().getPrev()
+    e1 = u.getEdge().getPrev()
+    e2 = v.getEdge().getPrev()
 
     aux = None #aux is an half-edge incident to u    
     while aux != e1:
@@ -264,3 +286,10 @@ def addVertex(u,v,faces):
     h4 = Edge(); h3t = Edge(); h4t = Edge();
 
     
+def addDiagonal(u, v, f):
+    #print("added diagonal ", u.getPoint(), v.getPoint())
+    h = referenceEdge(u, v)
+    #u.getPoint().lineto(v.getPoint())
+    seg = Segment(u.getPoint(),v.getPoint())
+    seg.hilight("yellow")
+    splitFace(u, v, h, h.getFace(), f)

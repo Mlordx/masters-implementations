@@ -3,12 +3,14 @@
 
 """
         Árvore binário da busca. Suponho que as keys são
-        segmentos
+        edges do arquivo dcel.py
+
+        Adaptada da implementacao de Victor Sanches Portella
 """
 
 from geocomp.common.segment import Segment
 from geocomp.common.prim import *
-from .minhasPrim import *
+from geocomp.robotmv.minhasPrim import *
 
 """
 DEFINES DE CONTROLE
@@ -24,26 +26,26 @@ class Folha:
                 self.key = key
                 self.red = False
 
-        def delete(self,x):
-                s = self.key
+        def delete(self, x):
+                s = self.key.getSegment()
                 if(s is None): 
                         return self 
-                if(s.init == x.init and s.to == x.to): #Deveria sempre ser True
+                if(s.init == x.getSegment().init and s.to == x.getSegment().to): #Deveria sempre ser True
                         return Folha(None);
                 else:
                         # Deleção falhou
                         return self
 
-        def insert(self,x):             
+        def insert(self, x):
                 s = self.key
                 if(s is None): 
                         self.key = x
                         return self
                 else:
-                        if(right(s.init, s.to, x.init)):
+                        if(right(s.getSegment().init, s.getSegment().to, x.getSegment().init)):
                                 return InCel(x, Folha(x), Folha(s), True)
-                        elif(collinear(s.init, s.to, x.init)):
-                                if(right(s.init, s.to, x.to)):
+                        elif(collinear(s.getSegment().init, s.getSegment().to, x.getSegment().init)):
+                                if(right(s.getSegment().init, s.getSegment().to, x.getSegment().to)):
                                         return InCel(x, Folha(x), Folha(s), True)
                                 else:
                                         return InCel(s, Folha(s), Folha(x), True)
@@ -65,21 +67,22 @@ class Folha:
                 return self.key
 
         def procuraInter(self, seg):
-                x = self.key
+                x = self.key.getSegment()
                 if(x is not None and intersecta(seg,x)): return x
                 else: return None
 
         def __repr__(self, level=0):
-                x = self.key
+                x = self.key.getSegment()
                 if(self.key is None): x = "NADA"
-                ret = "\t"*level+repr(x)+" " + str(x.getHelper().getPoint()) +"\n"
+                if self.key.getHelper(): a = self.key.getHelper().getPoint()
+                else: a = self.key.getHelper()
+                ret = "\t"*level+repr(x)+" " + str(a) +"\n"
                 return ret
 
         def getProx(self, p):
                 return self.key
 
         def getAnt(self, p):
-                print("id = ", id(self.key))
                 return self.key
 
 
@@ -90,9 +93,9 @@ class InCel:
                 self.key = key
                 self.red = red
 
-        def delete(self,x):
-                s = self.key
-                if(s.init == x.init and s.to == x.to):
+        def delete(self, x):
+                s = self.key.getSegment()
+                if(s.init == x.getSegment().init and s.to == x.getSegment().to):
                         #Achou o nó interno com chave igual
                         ### Balanceamento da rubro negra #####
                         #Eu sei que vou deletar algo (o max) da esquerda
@@ -117,7 +120,7 @@ class InCel:
 
                         self.key = self.l.getMax()
                         
-                elif(right(s.init, s.to, x.to)): 
+                elif(right(s.init, s.to, x.getSegment().to)): 
                         # Compara com o fim de X
                         ### Balanceamento da rubro negra ####
 
@@ -127,7 +130,7 @@ class InCel:
                         #achamos x na árvore. Verifico a key só para fins de
                         #depuração
                         if(isinstance(self.l, Folha)):
-                                if(self.l.key.init == x.init and self.l.key.to == self.l.key.to):
+                                if(self.l.key.getSegment().init == x.getSegment().init and self.l.key.getSegment().to == self.l.key.getSegment().to):
                                         #problema
                                         print("Esse caso (1) não deveria acontecer. Erro!")
                                 return self
@@ -141,13 +144,13 @@ class InCel:
 
                         self.l = self.l.delete(x)
 
-                elif(collinear(s.init, s.to, x.to)):
-                        if(right(s.init, s.to, x.init)):
+                elif(collinear(s.init, s.to, x.getSegment().to)):
+                        if(right(s.init, s.to, x.getSegment().init)):
                                 ### Balanceamento da rubro negra ###
                                 #Exatamente igual ao caso anterior
 
                                 if(isinstance(self.l, Folha)):
-                                        if(self.l.key.init == x.init and self.l.key.to == self.l.key.to):
+                                        if(self.l.key.init == x.getSegment().init and self.l.key.to == self.l.key.getSegment().to):
                                                 #problema
                                                 print("Esse caso (2) não deveria acontecer. Erro!")
                                         return self
@@ -222,11 +225,12 @@ class InCel:
 
         # x é um segmento novo
         def insert(self, x):
-                s = self.key;
-                if(right(s.init, s.to, x.init)):
+                x2 = x.getSegment()
+                s = self.key.getSegment()
+                if(right(s.init, s.to, x2.init)):
                         self.l = self.l.insert(x)
-                elif(collinear(s.init, s.to, x.init)):
-                        if(right(s.init, s.to, x.to)): 
+                elif(collinear(s.init, s.to, x2.init)):
+                        if(right(s.init, s.to, x2.to)): 
 
                                 self.l = self.l.insert(x)
                         else:
@@ -272,14 +276,14 @@ class InCel:
                 return self;
 
         def getProx(self, p):
-                x = self.key
+                x = self.key.getSegment()
                 if(right(x.init, x.to, p)):
                         return self.l.getProx(p)
                 else:
                         return self.r.getProx(p)
 
         def getAnt(self, p):
-                x = self.key
+                x = self.key.getSegment()
                 if(right(x.init, x.to, p)):
                         return self.r.getAnt(p)
                 else:
@@ -336,7 +340,7 @@ class InCel:
         def __repr__(self, level=0):
                 ret = ""
                 if(self.red): ret += "#"
-                ret += "\t"*level+repr(self.key)+"\n"
+                ret += "\t"*level+repr(self.key.getSegment())+"\n"
                 ret += self.l.__repr__(level+1)
                 ret += self.r.__repr__(level+1)
                 return ret
@@ -345,7 +349,7 @@ class Tree:
         def __init__(self):
                 self.root = Folha(None)
 
-        def insert(self, x, h=None):
+        def insert(self, x):
                 if(PINTA): x.hilight('yellow')
                 self.root = self.root.insert(x)
                 self.root.red = False
