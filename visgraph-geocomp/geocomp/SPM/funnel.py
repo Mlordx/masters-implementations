@@ -3,7 +3,7 @@
 
 
 class Funnel:
-    #implementantion of Funnel structure using a double-ended queue with a history of operations stack
+    #implementation of Funnel structure using a double-ended queue with a history of operations stack
     def __init__(self):
         self.deque = []
         self.history = []

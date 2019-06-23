@@ -39,7 +39,7 @@ def paintVertex(v, t):
     else: v.getPoint().hilight("pink") #MERGE
     control.sleep()
 
-def handleStartVertex(v, t, f):
+def handleStartVertex(v, t, f, d):
     v.getEdge().setHelper(v)
 
     print("Inserted ", v.getEdge().getSegment(), " on the tree, with helper ", v.getEdge().getHelper().getPoint())
@@ -47,16 +47,18 @@ def handleStartVertex(v, t, f):
     t.insert(v.getEdge())
     
 
-def handleEndVertex(v, t, f):
+def handleEndVertex(v, t, f, d):
     e = v.getEdge()
     u = e.getHelper()
-    if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
+    if u and vertexType(u) == "MERGE":
+        addDiagonal(u, v, f)
+        d.append(Segment(u.getPoint(), v.getPoint()))
 
     print("Removed ", e.getSegment(), " from the tree")
     print()
     t.delete(e)
 
-def handleSplitVertex(v, t, f):
+def handleSplitVertex(v, t, f, d):
     e_j = t.getAnt(v.getPoint()) #edge to the left of v in T
     u = e_j.getHelper()
     addDiagonal(u, v, f)
@@ -69,28 +71,37 @@ def handleSplitVertex(v, t, f):
     print()
     t.insert(e)
 
-def handleMergeVertex(v, t, f):
+def handleMergeVertex(v, t, f, d):
     e = v.getEdge().getPrev()
     u = e.getHelper()
-    if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
+    if u and vertexType(u) == "MERGE":
+        addDiagonal(u, v, f)
+        d.append(Segment(u.getPoint(), v.getPoint()))
+                 
     print("Removed ", e.getSegment(), " from tree")
     print()
     t.delete(e)
 
     e_j = t.getAnt(v.getPoint())
     u = e_j.getHelper()
-    if vertexType(u) == "MERGE": addDiagonal(u, v, f)
+    if vertexType(u) == "MERGE":
+        addDiagonal(u, v, f)
+        d.append(Segment(u.getPoint(), v.getPoint()))
+
     e_j.setHelper(v)
     print(e_j.getSegment(), " new helper = ", e_j.getHelper().getPoint())
     print()
 
-def handleRegularVertex(v, t, f):
+def handleRegularVertex(v, t, f, d):
     nextV = v.getEdge().getTarget()
 
     if below(nextV, v.getPoint()): #the interior of P is to the right of v
         e = v.getEdge().getPrev()
         u = e.getHelper()
-        if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
+        if u and vertexType(u) == "MERGE":
+            addDiagonal(u, v, f)
+            d.append(Segment(u.getPoint(), v.getPoint()))
+
         print("Removed ", e.getSegment(), " from tree")
         t.delete(e)
 
@@ -102,22 +113,25 @@ def handleRegularVertex(v, t, f):
         e_j = t.getAnt(v.getPoint())
         u = e_j.getHelper()
         #print("previous on tree: ", e_j, " with helper ", e_j.getHelper().getPoint())
-        if u and vertexType(u) == "MERGE": addDiagonal(u, v, f)
+        if u and vertexType(u) == "MERGE":
+            addDiagonal(u, v, f)
+            d.append(Segment(u.getPoint(), v.getPoint()))
+
         e_j.setHelper(v)
         print(e_j.getSegment(), " new helper = ", e_j.getHelper().getPoint())
 
     print()
 
 
-def handleVertex(v, t, f):
+def handleVertex(v, t, f, d):
     print("vertex = ", v.getPoint())
     tp = vertexType(v)
     paintVertex(v, tp)
-    if tp == "REGULAR": handleRegularVertex(v, t, f)
-    elif tp == "START": handleStartVertex(v, t, f)
-    elif tp == "SPLIT": handleSplitVertex(v, t, f)
-    elif tp == "MERGE": handleMergeVertex(v, t, f)
-    elif tp == "END": handleEndVertex(v, t, f)
+    if tp == "REGULAR": handleRegularVertex(v, t, f, d)
+    elif tp == "START": handleStartVertex(v, t, f, d)
+    elif tp == "SPLIT": handleSplitVertex(v, t, f, d)
+    elif tp == "MERGE": handleMergeVertex(v, t, f, d)
+    elif tp == "END": handleEndVertex(v, t, f, d)
     print("tree = ", t)
     print("-------------\n")
 
@@ -127,7 +141,10 @@ def decompose(l):
     verts = sorted(vertices, key = lambda p: (p.getPoint().y, -p.getPoint().x), reverse = True)
     tree = Tree()
 
-    for p in verts: handleVertex(p, tree, faces)
+    for i in range(len(l)): l[i].vertex = vertices[i]
+
+    diags = []
+    for p in verts: handleVertex(p, tree, faces, diags)
 
     for f in faces: f.printFace()
-    return faces
+    return faces, diags

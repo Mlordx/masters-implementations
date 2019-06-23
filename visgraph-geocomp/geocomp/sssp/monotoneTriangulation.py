@@ -176,12 +176,12 @@ def triangulateMonotone(l, f):
         d.init.lineto(d.to,"yellow")
     print("\n")
 
-    return f
+    return f, diagonals
             
 def triangulate(l):
     Polygon(l).plot("deep sky blue")
 
-    faces = decompose(l)
+    faces, diagonals = decompose(l)
     ans = []
     
     for f in faces:
@@ -189,6 +189,9 @@ def triangulate(l):
         vs, ccw, face = initDCEL(vertices)
         print("FACE: ")
         for bla in face: bla.printFace()
-        ans += triangulateMonotone(vs, face)
+        fs, diag = triangulateMonotone(vs, face) 
+        ans += fs
+        diagonals += diag
 
     for f in ans: f.printFace()
+    return ans, diagonals

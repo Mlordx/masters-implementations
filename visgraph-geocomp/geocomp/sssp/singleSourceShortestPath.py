@@ -11,6 +11,7 @@ from geocomp.common.guiprim import *
 from functools import cmp_to_key
 from .prims import *
 from .triangulation import *
+from .monotoneTriangulation import *
 from .funnel import *
 import math
 
@@ -23,18 +24,17 @@ def singleSourceShortestPath(l):
     
     print(source)
 
-    faces,diagonals = triangulation(l)
-
+    faces, diagonals = triangulation(l)
+    
     sourceF = source.vertex.getEdge().getFace()
-
-    for d in diagonals: d.plot('yellow')
     
     recursivePath(source)#,sourceF)
 
-    for d in diagonals: d.hide()
+    for v in l:
+        print("v = ", v, " predecessor = ", v.predecessor)
+    
     for v in l:
         aux = v
-
         while aux != source:
             aux.lineto(aux.predecessor,'red')
             aux = aux.predecessor
@@ -44,19 +44,29 @@ def singleSourceShortestPath(l):
         else: v.hilight()
         
 def recursivePath(s):
-    d = s.vertex.getEdge().getNext() 
-
-    print("s = ", s, "  d = ", d)
-    funnel = Funnel()
+    aux = None
     
-    a = d.getTarget()
-    b = d.getPrev().getTarget()
+    e = s.vertex.getEdge()
+    #print("s = ", s, "edge = ", e.getOrientedSegment())
 
-    funnel.add('b',a); funnel.add('b',s); funnel.add('b',b); #initial Funnel
+    while aux != e:
+        if aux is None: aux = e
+        print("aux = ", aux.getOrientedSegment())
+        d = aux.getNext()
+        print("s = ", s, "  d = ", d)
+        funnel = Funnel()
+    
+        a = d.getTarget()
+        b = d.getOrigin()
 
-    a.predecessor = b.predecessor = s
+        funnel.add('b',a); funnel.add('b',s); funnel.add('b',b); #initial Funnel
 
-    splitFunnel(d,funnel,1)
+        if a.predecessor == a: a.predecessor = s
+        if b.predecessor == b: b.predecessor = s
+
+        splitFunnel(d, funnel, 1)
+        aux = aux.getTwin().getNext()
+        
 
 
 def splitFunnel(d,f,i,side=None):
@@ -65,6 +75,7 @@ def splitFunnel(d,f,i,side=None):
     #d a certain diagonal
     #f is the funnel associated with d
     #i is the index of the apex of f
+    control.sleep()
     a = f[i]
 
     d = d.getTwin()
@@ -104,9 +115,9 @@ def splitFunnel(d,f,i,side=None):
             bla = 1
         elif left_on(a,v1,x) and left(a,v2,x): #search upper chain
 
-            for m in range(0,i):
-                if m == i-1: break
-                if right(f[m],f[m+1],x) and left(f[m],f[m-1],x): break
+            for m in reversed(range(0,i)):
+                if m == 0: break
+                if right(f[m],f[m+1],x) and left(f[m-1],f[m],x): break
 
             v = f[m]
             k = m
@@ -115,7 +126,7 @@ def splitFunnel(d,f,i,side=None):
 
             for m in range(i+1,f.length()):
                 if m == f.length()-1: break
-                if right(f[m],f[m+1],x) and left(f[m],f[m-1],x): break
+                if left(f[m],f[m+1],x) and right(f[m-1],f[m],x): break
                 
             v = f[m]
             k = m

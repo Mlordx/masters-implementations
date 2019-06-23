@@ -7,6 +7,13 @@ from geocomp.common.segment import Segment
 from geocomp.common.prim import *
 import math
 
+def above(a, b): #returns TRUE if a lies above b
+    if a.y > b.y: return True
+    if a.y == b.y and a.x < b.x: return True
+    return False
+
+def below(a, b):
+    return not above(a, b)
 
 def isVertex(p,l):
     # True if p belongs to the polygon border
@@ -57,6 +64,17 @@ def between(seg1, c):
    if(a.x != b.x): return (a.x <= c.x and c.x <= b.x) or (b.x <= c.x and c.x <= a.x)
    else: return (a.y <= c.y and c.y <= b.y) or (b.y <= c.y and c.y <= a.y)           
 
+
+# def between2(e1,e2,v):
+#     edge1 = Segment(e1.getOrigin(),e1.getTarget())
+#     edge2 = Segment(e2.getOrigin(),e2.getTarget())
+    
+#     if left_on(edge1.init,edge1.to,edge2.to):
+#         return left(edge1.init,edge1.to,v) and left(edge2.init,edge2.to,v)
+#     else:
+#         print("blulbly")
+#         return not(left(edge1.init,edge1.to,v) and left(edge2.init,edge2.to,v))# not (left_on(edge2.init,edge2.to,v) and not left_on(edge1.init,edge1.to,v) )
+
 def intersectsHalfLine(a, b, p):
     # True if the segment a->b intersects the half-line p->+inf
     if a.y < b.y: a,b = b,a
@@ -93,7 +111,6 @@ def comparison(p):
 
     return less
 
-    
 def intersectionPoint(a,b,c,d):
     #returns coordinates of the intersection point of the line that goes through
     #ab and the line that goes through cd
@@ -116,7 +133,6 @@ def intersectionPoint(a,b,c,d):
     y = ma*x + ka
 
     return (x,y)
-
 
 
 

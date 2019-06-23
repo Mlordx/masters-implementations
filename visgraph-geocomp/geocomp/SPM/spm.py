@@ -13,12 +13,13 @@ from functools import cmp_to_key
 from .prims import *
 from .triangulation import *
 from .funnel import *
+from .dcel import *
 import math
     
     
 def shortestPathMap(l):
     singleSourceShortestPath(l)
-    verts,edges,faces = initDCEL(l)
+    verts, edges, faces = initDCEL(l)
 
     for i in range(len(verts)):
         l[i].vertex = verts[i] #clearing the triangulation DCEL on the points
@@ -88,49 +89,36 @@ def shortestPathMap(l):
             u = funnel[j]
             v = funnel[j+1]
 
-            x,y = intersectionPoint(a,b,u,v)
+            x,y = intersectionPoint(a, b, u, v)
             print(x,y)
             if not (x == u.x and y == u.y) and not(x == v.x and y == v.y):
-                p = Point(x,y)
+                p = Point(x, y)
                 p.dist = 0
-                newVertex = Vertex(p,None)
+                newVertex = Vertex(p, None)
                 p.vertex = newVertex
-                addVertex(e,newVertex,faces)
+                addVertex(e, newVertex, faces)
                 e = newVertex.getEdge()
                 l2.append(p)
 
 
                 if j < apex_i:
-                    h = referenceEdge(u,p)
-                    print("Inseri1 ",u,p)
-                    # print("faces antes: ")
-                    # for f in faces: f.printFace()
-                    # print()
-                    splitFace(u,p,h,h.getFace(),faces)
-                    # print("faces depois: ")
-                    # for f in faces: f.printFace()
-                    # print()
+                    print("Inseri1 ", u, p)
+                    addDiagonal(u.vertex, p.vertex, faces)
 
                     aux = p
                     p.predecessor = u
                     while aux.predecessor != None:
-                        p.dist += dist2(aux,aux.predecessor)
+                        p.dist += dist2(aux, aux.predecessor)
                         aux = aux.predecessor
                     
                 else:
-                    h = referenceEdge(v,p)
-                    print("Inseri2 ",v,p)
-                    # print("faces antes: ")
-                    # for f in faces: f.printFace()
-                    # print()
-                    splitFace(v,p,h,h.getFace(),faces)
-                    # print("faces depois: ")
-                    # for f in faces: f.printFace()
-                    # print()
+                    print("Inseri2 ", v, p)
+                    addDiagonal(v.vertex, p.vertex, faces)
+                    
                     aux = p
                     p.predecessor = v
                     while aux.predecessor != None:
-                        p.dist += dist2(aux,aux.predecessor)
+                        p.dist += dist2(aux, aux.predecessor)
                         aux = aux.predecessor
                     
             elif x == u.x and y == u.y:
@@ -146,15 +134,8 @@ def shortestPathMap(l):
                     aux = aux.getTwin().getNext()
 
                 if cont: continue
-                h = referenceEdge(v,u)
-                print("Inseri3 ",v,u)
-                # print("faces antes: ")
-                # for f in faces: f.printFace()
-                # print()
-                splitFace(v,u,h,h.getFace(),faces)
-                # print("faces depois: ")
-                # for f in faces: f.printFace()
-                # print()
+                print("Inseri3 ", v, u)
+                addDiagonal(v.vertex, u.vertex, faces)
                 
             elif x == v.x and y == v.y:
                 ve = u.vertex
@@ -169,15 +150,8 @@ def shortestPathMap(l):
                     aux = aux.getTwin().getNext()
                 if cont: continue
 
-                h = referenceEdge(u,v)
-                print("Inseri4 ",u,v)
-                # print("faces antes: ")
-                # for f in faces: f.printFace()
-                # print()
-                splitFace(u,v,h,h.getFace(),faces)
-                # print("faces depois: ")
-                # for f in faces: f.printFace()
-                # print()
+                print("Inseri4 ", u, v)
+                addDiagonal(u.vertex, v.vertex, faces)
 
         print("##################################################")
 
