@@ -80,7 +80,7 @@ def shortestPathMap(l):
         print(funnel)
         print()
         e = a.vertex.getEdge()
-        while e.getTarget() != b:
+        while e.getTarget().getPoint() != b:
             e = e.getTwin().getNext()
         
         if ind == -1: continue

@@ -68,13 +68,13 @@ class Edge:
         self.helper = h
 
     def getOrientedSegment(self):
-        a = self.getOrigin()
-        b = self.getTarget()
+        a = self.getOrigin().getPoint()
+        b = self.getTarget().getPoint()
         return Segment(a, b)
         
     def getSegment(self):
-        a = self.getTarget()
-        b = self.getOrigin()
+        a = self.getTarget().getPoint()
+        b = self.getOrigin().getPoint()
 
         if below(a, b): a,b = b,a
 
@@ -84,7 +84,7 @@ class Edge:
         return str(self.getOrigin()) + " " + str(self.getTarget())
 
 class Vertex:
-    def __init__(self,point,edge):
+    def __init__(self, point, edge=None):
         self.point = point
         self.edge = edge
 
@@ -111,12 +111,12 @@ class Face:
         #list of vertices in the face, in counter-clockwise order
         listV = []
         
-        listV.append(self.edge.getTarget())
+        listV.append(self.edge.getTarget().getPoint())
 
         e = self.edge.getNext()
 
         while(e != self.edge):
-            listV.append(e.getTarget())
+            listV.append(e.getTarget().getPoint())
             e = e.getNext()
 
         return listV
@@ -148,18 +148,18 @@ class Face:
 def addVertex(e, x, faces):
     print()
     print()
-    print("e = ",e, " x = ", x.getPoint())
+    print("e = ",e.getOrientedSegment() , " x = ", x.getPoint())
     e1 = e.getPrev()
-    print("e1 = ",e1)
+    print("e1 = ",e1.getOrientedSegment())
     e2 = e.getNext()
-    print("e2 = ",e2)
+    print("e2 = ",e2.getOrientedSegment())
 
     faces.remove(e.getFace())
 
     e3 = e.getTwin().getPrev()
-    print("e3 = ", e3)
+    print("e3 = ", e3.getOrientedSegment())
     e4 = e.getTwin().getNext()
-    print("e4 = ", e4)
+    print("e4 = ", e4.getOrientedSegment())
 
     e.getFace().setEdge(e1)
     #if(not e.getTwin().isBoundary()): e.getTwin().getFace().setEdge(e3)
@@ -169,9 +169,9 @@ def addVertex(e, x, faces):
     e_c = Edge()
     e_d = Edge()
     
-    e_a.setTarget(x.getPoint())
+    e_a.setTarget(x)
     e_b.setTarget(e.getTarget())
-    e_c.setTarget(x.getPoint())
+    e_c.setTarget(x)
     e_d.setTarget(e.getTwin().getTarget())
     
     e_a.setTwin(e_d)
@@ -224,8 +224,8 @@ def splitFace(u, v, h, f, faces):
     h1.setTwin(h2)
     h2.setTwin(h1)
 
-    h1.setTarget(v.getPoint())
-    h2.setTarget(u.getPoint())
+    h1.setTarget(v)
+    h2.setTarget(u)
     u.setEdge(h1)
     v.setEdge(h2)
 
@@ -238,7 +238,7 @@ def splitFace(u, v, h, f, faces):
 
     aux = h2
 
-    while aux.getTarget() != v.getPoint():
+    while aux.getTarget().getPoint() != v.getPoint():
         aux.setFace(f2)
         aux = aux.getNext()
 
@@ -252,7 +252,7 @@ def splitFace(u, v, h, f, faces):
 
     aux = h1
 
-    while aux.getTarget() != u.getPoint():
+    while aux.getTarget().getPoint() != u.getPoint():
         aux.setFace(f1)
         aux = aux.getNext()
     aux.setFace(f1)
@@ -270,21 +270,25 @@ def initDCEL(points):
         u = points[i]
         v = points[(i+1)%len(points)]
 
+        vertexU = Vertex(u)
+        vertexV = Vertex(v)
+
         e = Edge()
-        e.setTarget(v)
+        e.setTarget(vertexV)
+        
 
         e2 = Edge()
-        e2.setTarget(u)
+        e2.setTarget(vertexU)
 
         e.setTwin(e2)
         e2.setTwin(e)
 
-        u2 = Vertex(u,e)
-        
+        vertexU.setEdge(e)
+        vertexV.setEdge(e2)
 
         edgesCCW.append(e)
         edgesCW.append(e2)
-        vertices.append(u2)
+        vertices.append(vertexU)
         
     faces = []
     f = Face()
@@ -361,13 +365,14 @@ def removeVertex(v, faces):
     for edge in edgeList: #contains every edge that has v as an origin, except for e
         removeEdge(edge, faces)
 
+    e.getOrigin().setEdge(e.getNext())
     e.getNext().setPrev(e.getTwin().getPrev()) #deleting e, which does not create a new face
     e.getTwin().getPrev().setNext(e.getNext())
     del e
     del v
     
 
-def removeEdge(e, faces):
+def removeEdge(e, faces): #merge Faces
     ePrev = e.getPrev()
     eNext = e.getNext()
     e2 = e.getTwin()
@@ -384,10 +389,12 @@ def removeEdge(e, faces):
 
     f = Face()
     f.setEdge(eNext)
-    eNext.setFace(f)
-    ePrev.setFace(f)
-    e2Next.setFace(f)
-    e2Prev.setFace(f)
+    aux = None
+    while aux != eNext:
+        if aux is None: aux = eNext
+        aux.setFace(f)
+        aux = aux.getNext()
+        
     faces.remove(f1)
     faces.remove(f2)
     faces.append(f)
